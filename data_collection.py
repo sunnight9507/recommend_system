@@ -4,7 +4,11 @@ import requests
 def main():
     # TODO: crawling code
     # TODO: Github
-    print("test")
+    
+
+def test():
+    """[summary]
+    """
 
 if __name__ == "__main__":
     main()
