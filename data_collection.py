@@ -29,14 +29,14 @@ def is_possible_scraping(url: str) -> bool:
         return False
 
 
-def scraping(url: str, code_list: list) -> dict:
+def scraping(url: str, code_list: list) -> list:
     """[summary]
 
     Args:
         url (str): [description]
         code_list (list): [description]
     """
-
+    to_db_data = []
     for code in code_list:
         temp_url = url + code
         data = {}
@@ -128,17 +128,49 @@ def scraping(url: str, code_list: list) -> dict:
                 data["movie_grade"] = movie_grade
             except:
                 pass
-            print(data)
+            # poster image url
+            try:
+                data["poster_image_url"] = soup.select_one("div.poster").a.img["src"]
+            except:
+                pass
+            # 줄거리 요약
+            try:
+                data["summary"] = soup.select_one("h5.h_tx_story").text.strip()
+            except:
+                pass
+            # 배우
+            try:
+                actors = soup.select_one("div.people > ul")
+                data["actors"] = re.findall(">([가-힣 ]+)</a>", str(actors))[1:]
+            except:
+                pass
+            # 관련 영화
+            try:
+                related_movies = soup.select_one("ul.thumb_link_mv")
+                data["related_movies"] = re.findall(
+                    ">([^><\n]+)</a>", str(related_movies)
+                )
+            except:
+                pass
 
+            # TODO: 디테일 평점
+            # TODO: 관람객 평점
+            # TODO: 성별 나이별 관람 추이
+            
+
+
+            to_db_data.append(data)
         else:
             print("해당 url은 scraping 할 수 없습니다.")
+
+    return to_db_data
 
 
 def main():
     # TODO: scraping https://movie.naver.com/movie/bi/mi/basic.nhn?code=187310
     url = "https://movie.naver.com/movie/bi/mi/basic.nhn?code="
-    code_list = ["31796", "187310", "1", "111111", "123455", "196051"]
-    # code_list = ["31796", "187310"]
+    # code_list = ["31796", "187310", "1", "111111", "123455", "196051", "89755"]
+    code_list = ["31796", "187310", "17059"]
     scraping(url, code_list)
 
 
