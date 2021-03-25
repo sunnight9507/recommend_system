@@ -2,6 +2,7 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+import database
 
 
 def is_possible_scraping(url: str) -> bool:
@@ -57,8 +58,7 @@ def scraping(url: str, code_list: list) -> list:
                 ).text
                 data["audience_rating"] = float(re.findall("[\d.]+", rating_text)[0])
             except:
-                print("해당 영화에 대한 정보가 없습니다.")
-                continue
+                pass
             # 기자 평론가 평점
             try:
                 data["journalist_rating"] = float(
@@ -72,13 +72,14 @@ def scraping(url: str, code_list: list) -> list:
                     soup.select_one("#pointNetizenPersentBasic").text
                 )
             except:
-                pass
+                print("해당 영화에 대한 정보가 없습니다.")
+                continue
             # 개요: 장르
             try:
                 genre = soup.select_one(
                     "dl.info_spec > dd > p > span:nth-of-type(1)"
                 ).text
-                data["genre"] = set(map(lambda x: x.strip(), genre.split(",")))
+                data["genre"] = list(map(lambda x: x.strip(), genre.split(",")))
             except:
                 pass
             # 개요: 제작국가
@@ -86,7 +87,7 @@ def scraping(url: str, code_list: list) -> list:
                 country_of_making = soup.select_one(
                     "dl.info_spec > dd > p > span:nth-of-type(2)"
                 ).text
-                data["country_of_making"] = set(
+                data["country_of_making"] = list(
                     map(lambda x: x.strip(), country_of_making.split(","))
                 )
             except:
@@ -125,7 +126,7 @@ def scraping(url: str, code_list: list) -> list:
                     for index, value in enumerate(movie_grade)
                 )
                 movie_grade.discard("")
-                data["movie_grade"] = movie_grade
+                data["movie_grade"] = list(movie_grade)
             except:
                 pass
             # poster image url
@@ -156,9 +157,9 @@ def scraping(url: str, code_list: list) -> list:
             # TODO: 디테일 평점
             # TODO: 관람객 평점
             # TODO: 성별 나이별 관람 추이
-            
 
-
+            print(data)
+            print()
             to_db_data.append(data)
         else:
             print("해당 url은 scraping 할 수 없습니다.")
@@ -170,8 +171,9 @@ def main():
     # TODO: scraping https://movie.naver.com/movie/bi/mi/basic.nhn?code=187310
     url = "https://movie.naver.com/movie/bi/mi/basic.nhn?code="
     # code_list = ["31796", "187310", "1", "111111", "123455", "196051", "89755"]
-    code_list = ["31796", "187310", "17059"]
-    scraping(url, code_list)
+    code_list = [str(code) for code in range(150000, 200000)]
+    to_db_data = scraping(url, code_list)
+    database.data2db(to_db_data, "recsys", "movie_info")
 
 
 if __name__ == "__main__":
